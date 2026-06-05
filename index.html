@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruang docking cilegon 1&2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 30px 15px; color: #1e293b; min-height: 100vh; }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        /* Header Kustom Cerah */
+        .form-header { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 20px -5px rgba(2, 132, 199, 0.2); margin-bottom: 24px; position: relative; }
+        .form-header::before { content: ''; position: absolute; top: -50%; right: -20%; width: 300px; height: 300px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; }
+        .header-content { padding: 32px 24px; position: relative; z-index: 1; }
+        .header-content h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; color: #ffffff; }
+        .header-content p { font-size: 14px; color: #e0f2fe; opacity: 0.95; }
+        
+        /* Kartu Form Putih Bersih */
+        .form-card { background: #ffffff; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .form-card:focus-within { border-color: #0284c7; box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12); transform: translateY(-2px); }
+        .form-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 10px; display: block; }
+        .required { color: #ef4444; }
+        
+        input[type="text"], input[type="date"], select { width: 100%; padding: 14px 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; outline: none; background: #f8fafc; color: #0f172a; transition: all 0.2s; }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus { border-color: #0284c7; background: #ffffff; box-shadow: 0 0 0 1px #0284c7; }
+        input::placeholder { color: #94a3b8; }
+        
+        .action-container { display: flex; gap: 12px; margin-top: 24px; margin-bottom: 32px; }
+        .btn { flex: 1; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-submit { background-color: #0284c7; color: white; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+        .btn-submit:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .btn-view { background-color: #64748b; color: white; }
+
+        /* ✨ GAYA BARU: Tabel Riwayat Input di Halaman Utama */
+        .history-container { background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+        .history-container h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+        .badge-count { background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        
+        .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; max-height: 300px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; background: #ffffff; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+        th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5; border-bottom: 2px solid #e2e8f0; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f0f9ff; }
+        
+        .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .status-selesai { background: #dcfce7; color: #15803d; }
+        .status-tidak { background: #fee2e2; color: #b91c1c; }
+        .status-pending { background: #fef3c7; color: #b45309; }
+        .empty-state { text-align: center; color: #94a3b8; padding: 20px; font-size: 13px; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="form-header">
+        <div class="header-content">
+            <h1>Ruang docking Cilegon 1&2</h1>
+            <p>Sistem Pembaruan Data Janji Bayar & Analisa Kasus Terpusat Online</p>
+        </div>
+    </div>
+
+    <form id="updateForm" onsubmit="kirimKeFirebase(event)">
+        <div class="form-card">
+            <label class="form-label">Kolektor (Remedial/MK2) <span class="required">*</span></label>
+            <select id="collector_select" required onchange="filterCustomers(this.value)">
+                <option value="">-- Pilih Nama Kolektor --</option>
+            </select>
+        </div>
+
+        <div class="form-card">
+            <label class="form-label">Nama Nasabah / Customer <span class="required">*</span></label>
+            <select id="customer_select" required disabled>
+                <option value="">-- Pilih Kolektor Terlebih Dahulu --</option>
+            </select>
+        </div>
+
+        <div class="form-card">
+            <label class="form-label">Tgl Prediksi Selesai (JB) <span class="required">*</span></label>
+            <input type="date" id="tgl_prediksi_jb" required>
+        </div>
+
+        <div class="form-card">
+            <label class="form-label">Deliquency (Dlq) <span class="required">*</span></label>
+            <input type="text" id="deliquency" required placeholder="Contoh: M1, M2, WO">
+        </div>
+
+        <div class="form-card">
+            <label class="form-label">Detail Kasus / Analisa Kasus (Ansus) <span class="required">*</span></label>
+            <input type="text" id="detail_kasus" required placeholder="Tulis catatan penanganan kasus di sini...">
+        </div>
+
+        <div class="form-card">
+            <label class="form-label">Prediksi Kelayakan <span class="required">*</span></label>
+            <select id="prediksi_sukses" required>
+                <option value="">-- Pilih Status Prediksi Kelayakan --</option>
+                <option value="SELESAI">SELESAI</option>
+                <option value="TIDAK SELESAI">TIDAK SELESAI</option>
+                <option value="PENDING / MONITORING">PENDING / MONITORING</option>
+            </select>
+        </div>
+
+        <div class="action-container">
+            <button type="button" class="btn btn-view" onclick="window.location.href='rekap_docking.html'">Buka Halaman Rekap ➜</button>
+            <button type="submit" id="btnSubmit" class="btn btn-submit">Kirim Data</button>
+        </div>
+    </form>
+
+    <div class="history-container">
+        <h2>Nasabah Sudah Terinput Hari Ini <span class="badge-count" id="liveCount">0 Terinput</span></h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Customer</th>
+                        <th>Kolektor</th>
+                        <th>Prediksi Kelayakan</th>
+                    </tr>
+                </thead>
+                <tbody id="liveHistoryBody">
+                    <tr>
+                        <td colspan="4" class="empty-state">Menghubungkan ke database...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ PASTIKAN KODE CONFIG DI BAWAH INI DISAMAKAN DENGAN MILIK FIREBASE MAS AMAR
+const firebaseConfig = {
+  apiKey: "AIzaSyA18xOcEdA15vIfatHcNgAx3X_6M7Io1_8",
+  authDomain: "rooms-c1-c2.firebaseapp.com",
+  projectId: "rooms-c1-c2",
+  storageBucket: "rooms-c1-c2.firebasestorage.app",
+  messagingSenderId: "330717741463",
+  appId: "1:330717741463:web:7a91aff257f4774127c4d2",
+  measurementId: "G-TV59EYWY5B"
+};
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const dataInput = {
+        "BAGUS ANDIWISMOYO": ["ADAM FAUZI", "SOFIAH SSOS", "SUNAJI", "HILMAN DERAJAT", "ABDUL FATAH", "KUSNADI", "LIA LUVITASARI", "ABAS", "HUSEN", "NAHROWI FIRMANSYAH", "SIDIK", "YULIANI", "OMAEDI", "SYAIFUL BAHRI", "REDHA SUEZTY", "KAMILUDIN", "GUNTUR BUDI PRAKOSO", "SUPRI AGUNG", "BAYU ALIFIANA SUJA`I", "EFENDI", "ILHAM", "MUHIYATI", "SHEILA AMELYA", "RIZKY HIDAYATULLOH", "ARIPIN HIDAYAT", "KAMILUDIN", "MERLINA AGISTIANI", "WIDODO", "ITO SUMANTO", "SAPANDI", "YULIWATI", "SUPRIONO", "MAULANA MAHRUS EFENDI", "ERNAWATI", "ZAENAL ABIDIN", "SUHEMI", "JAELANI", "SARIF HIDAYAT", "FAISAL SIREGAR", "ADE SILVIA PUTRI", "AL FAHMI JULIANSYAH", "SUNTANI", "ENDANG SUYATNA", "ISKANDAR JUNED", "JERRY PRATAMA SETYADI SH", "IRFAN SETIAWAN", "IRFAN SETIAWAN", "JERRY PRATAMA SETYADI SH"],
+        "DERI JIDAN IBNU SHOLEH": ["SITI NAFIAH", "SITI HAERIYAH", "M ABDUL AZIZ", "MOCHAMMAD REZA MAULANA", "SOBIHAH", "ADI SOBRI", "AGUS RAKHMAN MARTEN", "TEGUH RACHMAN HAKIM", "DEDE MUCHTADI", "ULFI ALAWI", "AHMAD ROCHYADI", "ROSITAH", "M RAMADANI", "DIANA", "ADE AMARILLAH", "ADE KOMARUDIN", "DHANNYA NOVITA", "SITI ROKHMAH", "ROHMATULLOH", "INABAH", "MURAI", "DJUHRONI", "MUHAMAD FERDYNAN ROBIANSHAH", "RENITHA VERONIKA", "ARI MUTOHARI", "BIMA AKBAR", "LISTYO ARIANI", "SITI NILA SARI", "HERI SAFARI", "RAZALI", "RIZALLULLOH", "MARKANI", "ILHAM SUCIAWAN", "DANUK PUJI HADIANTO", "SULTHAN DILLON SUWADI", "SRI LESTARI", "RUSDI", "RAFIUDIN", "IFAN JULIANTINO"],
+        "HAFIDULLAH": ["REINNALD SIREGAR", "ROSID", "SUPARDI", "MULHAT", "SANIAH", "AHMAD HIDAYAT JAELANI", "SUKMA INDRA", "SRI OKE MASRIYANI", "ADE GUNAWAN", "GUMARANG ADE HIMAWAN", "NENENG ROHMAETI", "NOVIYANA INDAH PURWATI", "MUHAMMAD RIZKI FEBRIANSYAH", "HIDAYAT", "HERMANSYAH SEPTIANTO", "HAYUNAH", "ANDIKA AGUNG PERWARI", "RIZKI HERMAWAN", "PURNIAWANTO", "EHA NURSEHA", "ADRIAN SUSATIO", "SAEFUDIN", "BADRUDIN", "HERI CANDRA", "SRI OKE MASRIYANI", "M DIDIN", "SANUSI", "HERI CANDRA", "UJANG SUJA`I", "BADRUDIN", "SAMIYATI", "MUHAMAD RIDWAN", "MUTHOIF M ROZI", "FERDI CANDRAWAN", "SITI MUAMALAH", "GUMARANG ADE HIMAWAN"],
+        "IRFAN": ["SUAEFUN", "SOLEH", "JUNED", "MUHAMMAD AFGHAN", "HADIYASA", "ARYADI", "INTY RIZKI APRIANI ST", "MUHANI", "TOHIRI", "ARIFIN", "MUHAMAD HELMI TAMUJI", "RUSLAN", "SAMID", "ARIFIN", "HERMAN", "SUHEDI", "NASUHI", "MEGA SAHWATI", "YALEN OKVIANA", "ADE MUMU", "MEILYNA SETIYOWATI", "TRI RENDY PRABOWO", "SARJONO", "ROHANI", "AHMAD SAEFUL ULUM", "EUIS FATIMAH", "SUHERDI", "SURNA", "ASEP SUPRIYATNA", "MUHAMAD KHOSIM", "MUHAMAD KHOSIM"],
+        "JAJAT": ["ROHIM", "VERA GUNAWAN", "FAUZI ARIS", "MAIMUN SALIM", "HAERUDIN AGUSTI", "SILVIA ROSIANA", "CAHYO SURO HANGGORO", "RIFKI SETIAWAN", "SANTI DAMAYANTI", "SUHERMAN", "FERI ADI NUGROHO", "HUMEDI", "ADE SELAMET", "MUHAMMAD RIZKY", "ADITIYA YUDHISTIRA", "FIRDAUS", "HATOMI", "NOVIA ACHIRIAN", "RUSDI", "MUHAMAD SUPRI", "DHIMAS PRASETYA", "HENDI JUNAEDI"],
+        "JIHAD IKLAS NUR PAMUNGKAS": ["NADI", "ROHMATULLAH", "SITI ASMARIYAH S PD", "FATULLAH", "MASWI", "SYAFRUDIN", "SURYADI", "SITI ROHMAH", "ATIK KOTUROHMAH", "SAEFULLAH", "IKHFAN", "A SUPRIYADI", "MASTONI", "DEDI ISKANDAR", "HAJIJI", "ALDI RIFALDI", "HERU BAHRUL ULUM", "SOLIHIN", "KEVIN SAHREN", "REZA RENALDO", "FITRIAH LIHAKIM", "MUHIB", "MUHIB", "PARYONO", "SUHANDI", "AJI BONDAN", "TAJUL BAHRI", "WAWAN", "WAWAN", "WAWAN", "WAWAN", "WAWAN", "HAYATUN KAMAL", "ERFIN", "AHMAD BUDI", "NIKMAT"],
+        "MUHAMAD SYARIFUDIN": ["SAMAJI", "BUDIMAN", "RUDI", "NAIMI", "SAMSUL", "HAMDANI", "M JULI APANDI", "EKA PUTRA", "NURYANSYAH", "MAKSUM", "MISRI", "NURAENI", "SANUSI", "MUJIJAT", "ASMINAH", "ISNA NUR AtIN", "SUJAI", "SUEBAH", "DEDI", "TARUNA WIJAYA", "MARISKA", "MUHAMMAD YATIN", "SANIAN", "ASTAPATI", "ANIS", "MUMU SOLIHIN", "ANDRY IRAWAN", "SARMAN", "TUHI", "ANDRE ATMAWIJAYA", "RIFAN NURHIKMAT", "SULHI", "DAPID", "MARKUM", "RISKA ARISKA", "MUHIDIN", "MUHIDIN"],
+        "SUPARMAN": ["AHMAD PALDI", "ARI FURKON", "SANTINAH", "SARMAYA", "RUSLI", "ROHANI", "SA`DULLOH", "SA`ADAH", "NUROHMAN", "FATHUL BARRI", "RIO AGUSTIAN", "MASULI", "IRWAN FIRMANSYAH", "MIFTAHUL ANWAR", "SAMSURI", "MASRIF", "FAUJI", "RUSLI", "IRWAN FIRMANSYAH", "TAZKIYAH SHARADIVA HALIZA", "SAENI", "RIJAL", "AHMAD RIYANTO", "MUHAMAD TOYIB", "SULASTRI", "NURUL HIDAYATTULLOH", "SODIKI", "MUHAMAD HASYIM", "FATHUROHMAN", "MUALIMIN RIYADI", "ILHAM HASBI ASHSHIDDIQI", "MUHAMMAD OKIYANI", "TIWI ALROMMAH", "SAFE`I", "PEPI SUDIANA", "UKI FARUKI", "HABIBULLAH"],
+        "TB RAY SAPUTRA": ["MAHDI", "JUHRO", "SANGSANG", "SAEPUDIN", "AGUS", "FIRMAN FIRDAUS HUSEN", "CINTA AZ ZAHRA ZAHRANI", "TATANG", "ANDUNG KURNIAWIDI", "MUNAJAT", "MOHAMAD FARHAN", "TEDI FIRMANSYAH", "DEDE MARDIYANTO", "NURJI", "GILANG RAMADHAN", "DENDI TRIWAHYUDI", "SUBENO", "DADI SUHARDIANA", "SAEDI", "SAMANAN", "RIFAI", "HENDRIYANSAH", "BIBIN BUDIMAN", "SUKMA JAYA", "MUSTAIN", "MALIHAH", "M SOLEH"]
+    };
+
+    window.onload = function() {
+        // Load Pilihan Kolektor
+        const collectorSelect = document.getElementById('collector_select');
+        Object.keys(dataInput).forEach(collector => {
+            let option = document.createElement('option');
+            option.value = collector;
+            option.text = collector;
+            collectorSelect.appendChild(option);
+        });
+
+        // 🔥 AKTIFKAN PENGINTAI LIVE DATA UNTUK TABEL RIWAYAT DI BAWAH FORM
+        database.ref('data_docking').on('value', function(snapshot) {
+            const dataObjek = snapshot.val();
+            tampilkanRiwayatSingkat(dataObjek);
+        });
+    };
+
+    function filterCustomers(selectedCollector) {
+        const customerSelect = document.getElementById('customer_select');
+        customerSelect.innerHTML = '<option value="">-- Pilih Nama Nasabah --</option>';
+
+        if (selectedCollector === "" || !dataInput[selectedCollector]) {
+            customerSelect.disabled = true;
+            return;
+        }
+
+        dataInput[selectedCollector].forEach(customerName => {
+            let option = document.createElement('option');
+            option.value = customerName;
+            option.text = customerName;
+            customerSelect.appendChild(option);
+        });
+        customerSelect.disabled = false;
+    }
+
+    // FUNGSI MENAMPILKAN RIWAYAT SINGKAT DI BAWAH FORM
+    function tampilkanRiwayatSingkat(dataObjek) {
+        const tbody = document.getElementById('liveHistoryBody');
+        const badgeCount = document.getElementById('liveCount');
+        
+        if (!dataObjek) {
+            badgeCount.textContent = "0 Terinput";
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Belum ada nasabah terinput hari ini. Form siap diisi!</td></tr>';
+            return;
+        }
+
+        let keys = Object.keys(dataObjek);
+        badgeCount.textContent = keys.length + " Terinput";
+
+        let htmlString = "";
+        let counter = 1;
+
+        // Looping data terbalik (Data terbaru muncul di posisi paling atas tabel)
+        keys.reverse().forEach(key => {
+            let item = dataObjek[key];
+            let badgeClass = 'status-pending';
+            if (item.progresDocking === 'SELESAI') badgeClass = 'status-selesai';
+            if (item.progresDocking === 'TIDAK SELESAI') badgeClass = 'status-tidak';
+
+            htmlString += `<tr>
+                <td style="color: #64748b; text-align: center;">${counter++}</td>
+                <td><strong style="color: #1e293b;">${item.namaCustomer}</strong></td>
+                <td style="color: #475569;">${item.remedialMk2}</td>
+                <td><span class="badge-status ${badgeClass}">${item.progresDocking}</span></td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = htmlString;
+    }
+
+    function kirimKeFirebase(event) {
+        event.preventDefault();
+        
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true;
+        btn.innerText = "Mengirim...";
+
+        const collector = document.getElementById('collector_select').value;
+        const customerName = document.getElementById('customer_select').value;
+        
+        let objekData = {
+            namaCustomer: customerName,
+            remedialMk2: collector,
+            progresDocking: document.getElementById('prediksi_sukses').value,
+            tglJb: document.getElementById('tgl_prediksi_jb').value,
+            dlq: document.getElementById('deliquency').value.toUpperCase(),
+            ansus: document.getElementById('detail_kasus').value,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        database.ref('data_docking').push(objekData, function(error) {
+            btn.disabled = false;
+            btn.innerText = "Kirim Data";
+            
+            if (error) {
+                alert("Gagal mengirim data: " + error.message);
+            } else {
+                alert("Data " + customerName + " berhasil masuk database pusat!");
+                document.getElementById('updateForm').reset();
+                document.getElementById('customer_select').innerHTML = '<option value="">-- Pilih Kolektor Terlebih Dahulu --</option>';
+                document.getElementById('customer_select').disabled = true;
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Rekap Docking Online - Light Mode</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #f1f5f9; color: #1e293b; padding: 20px 10px; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        h2 { font-size: 22px; margin-bottom: 20px; color: #0284c7; text-align: center; font-weight: 700; letter-spacing: -0.5px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-box { font-size: 14px; color: #334155; background: #f8fafc; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; border-left: 4px solid #0284c7; font-weight: 500; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+        .table-responsive { overflow-x: auto; border-radius: 10px; border: 1px solid #cbd5e1; margin-top: 10px; max-height: 450px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; background: #ffffff; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+        th { background-color: #f1f5f9; color: #0284c7; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #cbd5e1; }
+        tr:hover td { background-color: #f8fafc; }
+        input[type="checkbox"] { width: 18px; height: 18px; accent-color: #0284c7; cursor: pointer; vertical-align: middle; }
+        .action-container { display: flex; gap: 12px; margin-top: 24px; }
+        .btn { flex: 1; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-back { background-color: #64748b; color: white; }
+        .btn-clear { background-color: #ef4444; color: white; }
+        .btn-export { background-color: #0284c7; color: #ffffff; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2); }
+        .empty-state { text-align: center; color: #64748b; font-size: 14px; padding: 40px 0; background: #ffffff; }
+        .badge-status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+        .status-selesai { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .status-tidak { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .status-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    </style>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>SISTEM DOCKING & HASIL REKAP UTAMA (REAL-TIME)</h2>
+    
+    <div class="info-box">
+        <span>Total Record Gabungan All HP: <strong id="totalNasabah" style="color: #0284c7;">0</strong></span>
+        <span>Siap Cetak Terpilih: <strong id="totalTerpilih" style="color: #16a34a;">0</strong></span>
+    </div>
+    
+    <div class="form-group">
+        <label>DAFTAR INPUTAN LIVE DARI SEMUA KOLEKTOR</label>
+        <div id="tableWrapper">
+            <div class="empty-state">Menghubungkan ke basis data online terpusat...</div>
+        </div>
+    </div>
+    
+    <div class="action-container">
+        <button class="btn btn-back" onclick="window.location.href='index.html'">+ Tambah Input Baru</button>
+        <button class="btn btn-clear" onclick="hapusSemuaDatabase()">Bersihkan Semua Data</button>
+        <button class="btn btn-export" onclick="downloadExcel()">Export Gabungan (.xlsx)</button>
+    </div>
+</div>
+
+<script>
+    // ⚠️ PASTIKAN SAMA DENGAN CONFIG DI INDEX.HTML
+const firebaseConfig = {
+  apiKey: "AIzaSyA18xOcEdA15vIfatHcNgAx3X_6M7Io1_8",
+  authDomain: "rooms-c1-c2.firebaseapp.com",
+  projectId: "rooms-c1-c2",
+  storageBucket: "rooms-c1-c2.firebasestorage.app",
+  messagingSenderId: "330717741463",
+  appId: "1:330717741463:web:7a91aff257f4774127c4d2",
+  measurementId: "G-TV59EYWY5B"
+};
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // MEMANTAU DAN MEMBACA DATA LANGSUNG DARI FIREBASE SECARA LIVE
+    database.ref('data_docking').on('value', function(snapshot) {
+        const dataWrapper = snapshot.val();
+        tampilkanTabelOnline(dataWrapper);
+    });
+
+    function tampilkanTabelOnline(dataObjek) {
+        const wrapper = document.getElementById('tableWrapper');
+        
+        if (!dataObjek) {
+            document.getElementById('totalNasabah').textContent = "0";
+            document.getElementById('totalTerpilih').textContent = "0";
+            wrapper.innerHTML = '<div class="empty-state">Belum ada data masuk dari HP manapun di database terpusat.</div>';
+            return;
+        }
+
+        let keys = Object.keys(dataObjek);
+        document.getElementById('totalNasabah').textContent = keys.length;
+        document.getElementById('totalTerpilih').textContent = keys.length;
+
+        let tableHtml = `
+            <div class="table-responsive">
+                <table id="rekapTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px; text-align:center;">PILIH</th>
+                            <th style="width: 50px; text-align:center;">NO</th>
+                            <th>NAMA CUSTOMER</th>
+                            <th>REMEDIAL / MK2</th>
+                            <th>TGL PREDIKSI JB</th>
+                            <th>DLQ</th>
+                            <th>DETAIL KASUS (ANSUS)</th>
+                            <th>PREDIKSI KELAYAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        let counter = 1;
+        for (let key in dataObjek) {
+            let item = dataObjek[key];
+            let badgeClass = 'status-pending';
+            if (item.progresDocking === 'SELESAI') badgeClass = 'status-selesai';
+            if (item.progresDocking === 'TIDAK SELESAI') badgeClass = 'status-tidak';
+
+            tableHtml += `
+                <tr>
+                    <td style="text-align:center;">
+                        <input type="checkbox" class="chk-nasabah" value="${key}" checked onchange="hitungTerpilih()">
+                    </td>
+                    <td style="text-align:center; color: #64748b;">${counter++}</td>
+                    <td><strong style="color: #1e293b;">${item.namaCustomer}</strong></td>
+                    <td style="color: #475569;">${item.remedialMk2}</td>
+                    <td style="color: #b45309; font-weight: 600;">${item.tglJb}</td>
+                    <td>${item.dlq}</td>
+                    <td>${item.ansus}</td>
+                    <td><span class="badge-status ${badgeClass}">${item.progresDocking}</span></td>
+                </tr>
+            `;
+        }
+
+        tableHtml += `</tbody></table></div>`;
+        wrapper.innerHTML = tableHtml;
+    }
+
+    function hitungTerpilih() {
+        const checkedCount = document.querySelectorAll('.chk-nasabah:checked').length;
+        document.getElementById('totalTerpilih').textContent = checkedCount;
+    }
+
+    function hapusSemuaDatabase() {
+        if (confirm("⚠️ PERINGATAN: Tindakan ini akan menghapus semua isi database online terpusat untuk SEMUA USER. Anda yakin?")) {
+            database.ref('data_docking').remove();
+        }
+    }
+
+    function downloadExcel() {
+        const table = document.getElementById('rekapTable');
+        if (!table) {
+            alert("Tidak ada data untuk di-export!");
+            return;
+        }
+
+        const rows = document.querySelectorAll('#rekapTable tbody tr');
+        let dataUntukExcel = [];
+        let indexNo = 1;
+
+        rows.forEach(row => {
+            const chk = row.querySelector('.chk-nasabah');
+            if (chk && chk.checked) {
+                dataUntukExcel.push({
+                    "NO": indexNo++,
+                    "NAMA CUSTOMER": row.cells[2].innerText,
+                    "REMEDIAL / MK2": row.cells[3].innerText,
+                    "TGL PREDIKSI JB": row.cells[4].innerText,
+                    "DELIQUENCY": row.cells[5].innerText,
+                    "DETAIL KASUS (ANSUS)": row.cells[6].innerText,
+                    "PREDIKSI KELAYAKAN": row.cells[7].innerText
+                });
+            }
+        });
+
+        if (dataUntukExcel.length === 0) {
+            alert("Silakan centang baris data terlebih dahulu!");
+            return;
+        }
+
+        const worksheet = XLSX.utils.json_to_sheet(dataUntukExcel);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Docking Pusat");
+        XLSX.writeFile(workbook, "Rekap_Docking_Terpusat.xlsx");
+    }
+</script>
+</body>
+</html>

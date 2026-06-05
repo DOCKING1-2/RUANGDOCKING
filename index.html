@@ -170,7 +170,7 @@
             <div class="profile-name" id="userNama">-</div>
             <div class="profile-role" id="userJabatan">-</div>
             
-            <button onclick="bukaHalamanKerja()" class="btn-docking">
+            <button onclick="bukaHalamanKerja()" id="btnAksiProfil" class="btn-docking">
                 <i class="fa-solid fa-ship"></i> ISI DOCKINGAN
             </button>
         </div>
@@ -302,20 +302,20 @@
 
         // 2. DATA UTAMA KARYAWAN & KOLEKTOR
         const dataKaryawan = {
-            "70028729": { nama: "Tb ray saputra", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
-            "10091263": { nama: "Hafidullah", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
-            "10093273": { nama: "Deri jidan ibnu soleh", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
-            "70027544": { nama: "Muhammad syaripudin", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
-            "10080330": { nama: "Jajat", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
-            "70030167": { nama: "Jihad", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
-            "10091229": { nama: "Irfan", jabatan: "Karyawan", foto: "irfan.jpg" },
-            "10090660": { nama: "Bagus", jabatan: "Karyawan", foto: "https://via.placeholder.com/150" },
+            "70028729": { nama: "Tb ray saputra", jabatan: "CEO", foto: "ray.png" },
+            "10091263": { nama: "Hafidullah", jabatan: "Karyawan", foto: "hafid.png" },
+            "10093273": { nama: "Deri jidan ibnu soleh", jabatan: "Karyawan", foto: "deri.png" },
+            "70027544": { nama: "Muhammad syaripudin", jabatan: "Karyawan", foto: "Sarip.png" },
+            "10080330": { nama: "Jajat", jabatan: "Karyawan", foto: "jajat.png" },
+            "70030167": { nama: "Jihad", jabatan: "Karyawan", foto: "jihad.png" },
+            "10091229": { nama: "Irfan", jabatan: "Karyawan", foto: "irfan.png" },
+            "10090660": { nama: "Bagus", jabatan: "Karyawan", foto: "bagus.png" },
             
             // PENGGUNA KHUSUS: PAK SALMAN
             "10082269": { 
                 nama: "PAK SALMAN", 
                 jabatan: "Supervisor / Khusus", 
-                foto: "https://via.placeholder.com/150",
+                foto: "salman.png",
                 khusus: true
             }
         };
@@ -371,26 +371,35 @@
                 errorMsg.style.display = 'none';
                 document.getElementById('password').value = '';
 
-                // Cek Hak Akses Login
+                // Mempersiapkan tampilan data profil yang berhasil login
+                document.getElementById('userNama').innerText = userAktif.nama;
+                document.getElementById('userJabatan').innerText = userAktif.jabatan;
+                document.getElementById('userFoto').src = userAktif.foto;
+
+                // Kustomisasi teks tombol aksi profil berdasarkan tipe hak akses user
+                const btnAksiProfil = document.getElementById('btnAksiProfil');
                 if (userAktif.khusus) {
-                    // Pak Salman langsung diarahkan ke halaman Control Panel Rekap Utama
-                    switchPage('sectionRekapSalman');
+                    btnAksiProfil.innerHTML = '<i class="fa-solid fa-gauge"></i> REKAP HASIL DOKING';
                 } else {
-                    // Karyawan biasa transit dulu ke verifikasi profil
-                    document.getElementById('userNama').innerText = userAktif.nama;
-                    document.getElementById('userJabatan').innerText = userAktif.jabatan;
-                    document.getElementById('userFoto').src = userAktif.foto;
-                    switchPage('sectionProfil');
+                    btnAksiProfil.innerHTML = '<i class="fa-solid fa-ship"></i> ISI DOCKINGAN';
                 }
+
+                // Semua user (karyawan & Pak Salman) sekarang transit melihat profil terlebih dahulu
+                switchPage('sectionProfil');
             } else {
                 errorMsg.style.display = 'block';
             }
         }
 
         function bukaHalamanKerja() {
-            // Set judul nama pengisi di Form Input Karyawan
-            document.getElementById('karyawanHeaderTitle').innerText = "Ruang Docking - " + userAktif.nama.toUpperCase();
-            switchPage('sectionInputDocking');
+            if (userAktif && userAktif.khusus) {
+                // Jika Pak Salman, lanjut ke halaman Control Panel Rekap Utama
+                switchPage('sectionRekapSalman');
+            } else {
+                // Jika Karyawan biasa, lanjut ke halaman pengisian form
+                document.getElementById('karyawanHeaderTitle').innerText = "Ruang Docking - " + userAktif.nama.toUpperCase();
+                switchPage('sectionInputDocking');
+            }
         }
 
         function logout() {

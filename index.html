@@ -10,16 +10,16 @@
     <style>
         /* --- PALET WARNA TERANG: BIRU & PUTIH --- */
         :root {
-            --bg-main: #f1f5f9;          /* Latar belakang utama (Abu terang) */
-            --bg-card: #ffffff;          /* Latar belakang kartu/konten (Putih bersih) */
-            --primary: #0284c7;          /* Biru Utama (Sky Blue / Royal) */
-            --primary-hover: #0369a1;    /* Biru Gelap saat tombol di-hover */
-            --primary-light: #e0f2fe;    /* Biru Muda untuk background aksen/badge */
-            --success: #16a34a;          /* Hijau Sukses */
-            --danger: #dc2626;           /* Merah Hapus/Gagal */
-            --text-main: #1e293b;        /* Teks Utama (Gelap Elegan) */
-            --text-muted: #64748b;       /* Teks Sekunder (Abu-abu) */
-            --border-color: #e2e8f0;     /* Pembatas Garis */
+            --bg-main: #f1f5f9;          
+            --bg-card: #ffffff;          
+            --primary: #0284c7;          
+            --primary-hover: #0369a1;    
+            --primary-light: #e0f2fe;    
+            --success: #16a34a;          
+            --danger: #dc2626;           
+            --text-main: #1e293b;        
+            --text-muted: #64748b;       
+            --border-color: #e2e8f0;     
         }
 
         * {
@@ -220,7 +220,7 @@
 </head>
 <body>
 
-    <!-- 1. HALAMAN LOGIN (TEMA TERANG PUTIH BIRU) -->
+    <!-- 1. HALAMAN LOGIN -->
     <div id="sectionLogin" class="page-section active">
         <div class="card-container">
             <h1 class="login-title">RUANG DOCKING</h1>
@@ -237,7 +237,7 @@
         </div>
     </div>
 
-    <!-- 2. HALAMAN PROFIL USER (TEMA TERANG PUTIH BIRU) -->
+    <!-- 2. HALAMAN PROFIL USER -->
     <div id="sectionProfil" class="page-section">
         <div class="card-container">
             <h1 class="login-title">PROFIL USER</h1>
@@ -301,7 +301,7 @@
                                 <option value="">-- Pilih Status Prediksi Kelayakan --</option>
                                 <option value="SELESAI">SELESAI</option>
                                 <option value="TIDAK SELESAI">TIDAK SELESAI</option>
-                                <option value="PENDING / MONITORING">PENDING / MONITORING</option>
+                                <option value="PENDING">PENDING / MONITORING</option>
                             </select>
                         </div>
                     </div>
@@ -342,7 +342,7 @@
             <div class="light-theme">
                 <div class="form-header">
                     <div class="header-content">
-                        <h1><i class="fa-solid fa-sliders"></i> CONTROL PANEL REKAP UTAMA</h1>
+                        <h1><i class="fa-solid fa-sliders"></i> REKAP HASIL DOCKING</h1>
                         <p>Halaman Pemantauan Data dan Manajemen Laporan Utama Pak Salman</p>
                     </div>
                 </div>
@@ -362,7 +362,7 @@
                 <div class="action-container">
                     <button class="btn btn-logout-light" onclick="logout()"><i class="fa-solid fa-power-off"></i> Keluar</button>
                     <button class="btn btn-clear" onclick="hapusSemuaDatabase()"><i class="fa-solid fa-trash-can"></i> Bersihkan Data</button>
-                    <button class="btn btn-export" onclick="downloadExcel()"><i class="fa-solid fa-file-excel"></i> Export Belum Input (.xlsx)</button>
+                    <button class="btn var(--success) btn-export" onclick="downloadExcel()"><i class="fa-solid fa-file-excel"></i> Download Rekap Excel (.xlsx)</button>
                 </div>
             </div>
         </div>
@@ -481,7 +481,7 @@
             }
         }
 
-        // --- 4. FORM LOGIC (FILTER & TRANSKASI) ---
+        // --- 4. FORM LOGIC (FILTER & TRANSAKSI) ---
         function filterCustomers(selectedCollector) {
             const customerSelect = document.getElementById('customer_select');
             customerSelect.innerHTML = '<option value="">-- Pilih Nama Nasabah --</option>';
@@ -664,39 +664,81 @@
             }
         }
 
+        // ==========================================================================
+        // PERBAIKAN UTAMA: FUNGSI DOWNLOAD EXCEL DUA SHEET (SUDAH & BELUM INPUT)
+        // ==========================================================================
         function downloadExcel() {
-            let nasabahSudahInput = [];
-            if (globalDatabaseSnapshot) {
-                Object.keys(globalDatabaseSnapshot).forEach(key => {
-                    nasabahSudahInput.push(globalDatabaseSnapshot[key].namaCustomer);
+            let dataSudahInputExcel = [];
+            let nasabahSudahInputNamaOnly = [];
+            let indexSudah = 1;
+
+            // 1. Ambil data dari tabel online Pak Salman yang bertanda Checkbox (Terpilih)
+            const checkboxes = document.querySelectorAll('.chk-nasabah:checked');
+            
+            if (globalDatabaseSnapshot && checkboxes.length > 0) {
+                checkboxes.forEach(cb => {
+                    let key = cb.value;
+                    let item = globalDatabaseSnapshot[key];
+                    if (item) {
+                        nasabahSudahInputNamaOnly.push(item.namaCustomer);
+                        dataSudahInputExcel.push({
+                            "NO": indexSudah++,
+                            "NAMA CUSTOMER": item.namaCustomer,
+                            "REMEDIAL / MK2": item.remedialMk2,
+                            "TGL JB": item.tglJb,
+                            "DLQ": item.dlq,
+                            "DETAIL KASUS (ANSUS)": item.ansus,
+                            "PREDIKSI": item.progresDocking,
+                            "INPUT OLEH": item.inputBy || "Karyawan"
+                        });
+                    }
                 });
             }
 
+            // 2. Cari nasabah yang tidak terdaftar di daftar checklist data masuk (Belum Input)
             let dataBelumInputExcel = [];
-            let indexNo = 1;
+            let indexBelum = 1;
 
             Object.keys(dataInput).forEach(kolektor => {
                 dataInput[kolektor].forEach(nasabah => {
-                    if (!nasabahSudahInput.includes(nasabah)) {
+                    if (!nasabahSudahInputNamaOnly.includes(nasabah)) {
                         dataBelumInputExcel.push({
-                            "NO": indexNo++,
+                            "NO": indexBelum++,
                             "NAMA CUSTOMER": nasabah,
-                            "REMEDIAL / MK2": kolektor,
+                            "REMEDIAL / MK2": iolektor = kolektor,
                             "STATUS KETERANGAN": "BELUM INPUT DATA DOCKING"
                         });
                     }
                 });
             });
 
-            if (dataBelumInputExcel.length === 0) {
-                alert("Semua nasabah dari seluruh kolektor sudah menginputkan data hari ini.");
+            // 3. Validasi apakah ada data yang siap diunduh
+            if (dataSudahInputExcel.length === 0 && dataBelumInputExcel.length === 0) {
+                alert("Tidak ada data rekapitulasi yang dapat diekspor saat ini.");
                 return;
             }
 
-            const worksheet = XLSX.utils.json_to_sheet(dataBelumInputExcel);
+            // 4. Proses pembuatan file Excel Multi-Sheet
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Belum Input");
-            XLSX.writeFile(workbook, "Nasabah_Belum_Input_Docking.xlsx");
+
+            // Masukkan Sheet 1 jika ada data nasabah yang sudah di-input
+            if (dataSudahInputExcel.length > 0) {
+                const worksheetSudah = XLSX.utils.json_to_sheet(dataSudahInputExcel);
+                XLSX.utils.book_append_sheet(workbook, worksheetSudah, "Sudah Input");
+            } else {
+                // Alternatif lembar kosong agar file tidak error saat data database kosong
+                const worksheetKosong = XLSX.utils.json_to_sheet([{"KETERANGAN": "Belum ada data masuk"}]);
+                XLSX.utils.book_append_sheet(workbook, worksheetKosong, "Sudah Input");
+            }
+
+            // Masukkan Sheet 2 jika ada nasabah sisa yang belum di-input
+            if (dataBelumInputExcel.length > 0) {
+                const worksheetBelum = XLSX.utils.json_to_sheet(dataBelumInputExcel);
+                XLSX.utils.book_append_sheet(workbook, worksheetBelum, "Belum Input");
+            }
+
+            // Ekspor file Excel terpadu
+            XLSX.writeFile(workbook, "Rekap_Sistem_Ruang_Docking_Pusat.xlsx");
         }
     </script>
 </body>
